@@ -1,59 +1,69 @@
 <template>
   <main>
-    <div class="container">
-      <h1>ADHD Questionnaire</h1>
+    <div class="container card">
+      <h1 class="title">ADHD Questionnaire</h1>
       <form @submit.prevent="submitAnswers">
         <div class="age-selector">
-          <label for="age-group">Are you &gt;16 years old?</label>
-          <select id="age-group" v-model="isAdult">
+          <label for="age-group">Are you <span class="mono">&gt;16</span> years old?</label>
+          <select id="age-group" v-model="isAdult" class="select">
             <option :value="true">Yes</option>
             <option :value="false">No</option>
           </select>
         </div>
-        <h2>Inattention Questions</h2>
+        <h2 class="subtitle">Inattention Questions</h2>
         <div v-for="(q, idx) in questionsGroup1" :key="q.id" class="question-block">
-          <label :for="'inattention-' + q.id">{{ q.question }}</label>
-          <div>
-            <input type="radio" :id="'inattention-yes-' + q.id" :name="'inattention-' + q.id" value="yes" v-model="answersGroup1[idx]" />
-            <label :for="'inattention-yes-' + q.id">Yes</label>
-            <input type="radio" :id="'inattention-no-' + q.id" :name="'inattention-' + q.id" value="no" v-model="answersGroup1[idx]" />
-            <label :for="'inattention-no-' + q.id">No</label>
+          <div class="question-text">{{ q.question }}</div>
+          <div class="toggle-group">
+            <label :class="['toggle', answersGroup1[idx] === 'yes' ? 'active' : '']">
+              <input type="radio" :name="'inattention-' + q.id" value="yes" v-model="answersGroup1[idx]" />
+              Yes
+            </label>
+            <label :class="['toggle', answersGroup1[idx] === 'no' ? 'active' : '']">
+              <input type="radio" :name="'inattention-' + q.id" value="no" v-model="answersGroup1[idx]" />
+              No
+            </label>
           </div>
         </div>
-        <h2>Hyperactivity/Impulsivity Questions</h2>
+        <h2 class="subtitle">Hyperactivity/Impulsivity Questions</h2>
         <div v-for="(q, idx) in questionsGroup2" :key="q.id" class="question-block">
-          <label :for="'hyperactivity-' + q.id">{{ q.question }}</label>
-          <div>
-            <input type="radio" :id="'hyperactivity-yes-' + q.id" :name="'hyperactivity-' + q.id" value="yes" v-model="answersGroup2[idx]" />
-            <label :for="'hyperactivity-yes-' + q.id">Yes</label>
-            <input type="radio" :id="'hyperactivity-no-' + q.id" :name="'hyperactivity-' + q.id" value="no" v-model="answersGroup2[idx]" />
-            <label :for="'hyperactivity-no-' + q.id">No</label>
+          <div class="question-text">{{ q.question }}</div>
+          <div class="toggle-group">
+            <label :class="['toggle', answersGroup2[idx] === 'yes' ? 'active' : '']">
+              <input type="radio" :name="'hyperactivity-' + q.id" value="yes" v-model="answersGroup2[idx]" />
+              Yes
+            </label>
+            <label :class="['toggle', answersGroup2[idx] === 'no' ? 'active' : '']">
+              <input type="radio" :name="'hyperactivity-' + q.id" value="no" v-model="answersGroup2[idx]" />
+              No
+            </label>
           </div>
         </div>
-        <button type="submit">Submit</button>
+        <button type="submit" class="btn">Submit</button>
         <div v-if="error" class="error-message">Please answer all questions before submitting.</div>
       </form>
-      <div v-if="showResult" class="grading-result">
-        <h3>Screening Result</h3>
-        <ul>
-          <li><strong>Inattention:</strong> {{ inattentionYes }} Yes</li>
-          <li><strong>Hyperactivity/Impulsivity:</strong> {{ hyperYes }} Yes</li>
-          <li><strong>Total Yes:</strong> {{ totalYes }}</li>
-        </ul>
-        <div v-if="isAdult">
-          <div v-if="inattentionYes >= 4">Positive Inattention Screening (Adult)</div>
-          <div v-if="hyperYes >= 4">Positive Hyperactive/Impulsive Screening (Adult)</div>
-          <div v-if="totalYes >= 7">Overall ADHD Likelihood (Adult): Top 5–7% symptom frequency</div>
-          <div v-if="inattentionYes < 4 && hyperYes < 4 && totalYes < 7">Screening below threshold for ADHD likelihood (Adult)</div>
+      <transition name="fade">
+        <div v-if="showResult" class="grading-result card">
+          <h3 class="result-title">Screening Result</h3>
+          <ul>
+            <li><strong>Inattention:</strong> <span class="mono">{{ inattentionYes }}</span> Yes</li>
+            <li><strong>Hyperactivity/Impulsivity:</strong> <span class="mono">{{ hyperYes }}</span> Yes</li>
+            <li><strong>Total Yes:</strong> <span class="mono">{{ totalYes }}</span></li>
+          </ul>
+          <div v-if="isAdult">
+            <div v-if="inattentionYes >= 4" class="result-positive">Positive Inattention Screening (Adult)</div>
+            <div v-if="hyperYes >= 4" class="result-positive">Positive Hyperactive/Impulsive Screening (Adult)</div>
+            <div v-if="totalYes >= 7" class="result-positive">Overall ADHD Likelihood (Adult): Top 5–7% symptom frequency</div>
+            <div v-if="inattentionYes < 4 && hyperYes < 4 && totalYes < 7" class="result-negative">Screening below threshold for ADHD likelihood (Adult)</div>
+          </div>
+          <div v-else>
+            <div v-if="inattentionYes >= 6" class="result-positive">Positive Inattention Screening (Child)</div>
+            <div v-if="hyperYes >= 6" class="result-positive">Positive Hyperactive/Impulsive Screening (Child)</div>
+            <div v-if="inattentionYes >= 6 || hyperYes >= 6" class="result-positive">Overall ADHD Likelihood (Child): Meets category threshold</div>
+            <div v-if="inattentionYes < 6 && hyperYes < 6" class="result-negative">Screening below threshold for ADHD likelihood (Child)</div>
+          </div>
+          <p class="note">Meeting or exceeding the symptom count threshold does not constitute a diagnosis. A positive screen increases the likelihood of ADHD and indicates the need for professional evaluation.</p>
         </div>
-        <div v-else>
-          <div v-if="inattentionYes >= 6">Positive Inattention Screening (Child)</div>
-          <div v-if="hyperYes >= 6">Positive Hyperactive/Impulsive Screening (Child)</div>
-          <div v-if="inattentionYes >= 6 || hyperYes >= 6">Overall ADHD Likelihood (Child): Meets category threshold</div>
-          <div v-if="inattentionYes < 6 && hyperYes < 6">Screening below threshold for ADHD likelihood (Child)</div>
-        </div>
-        <p class="note">Meeting or exceeding the symptom count threshold does not constitute a diagnosis. A positive screen increases the likelihood of ADHD and indicates the need for professional evaluation.</p>
-      </div>
+      </transition>
     </div>
   </main>
 </template>
@@ -114,58 +124,181 @@ function submitAnswers() {
 </script>
 
 <style scoped>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+  body, .container {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f7f8fa;
+    color: #222;
+  }
+  .container {
+    max-width: 600px;
+    margin: 3em auto;
+    padding: 2em 2.5em;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 32px 0 rgba(60, 80, 120, 0.08);
+    transition: box-shadow 0.2s;
+  }
+  .card {
+    box-shadow: 0 2px 16px 0 rgba(60, 80, 120, 0.10);
+    border-radius: 18px;
+    background: #fff;
+  }
+  .title {
+    font-size: 2.2em;
+    font-weight: 600;
+    margin-bottom: 0.5em;
+    letter-spacing: -1px;
+    text-align: center;
+  }
+  .subtitle {
+    font-size: 1.3em;
+    font-weight: 600;
+    margin: 2em 0 1em 0;
+    color: #4f8cff;
+    letter-spacing: -0.5px;
+  }
+  .age-selector {
+    margin-bottom: 2em;
+    display: flex;
+    align-items: center;
+    gap: 1em;
+  }
+  .select {
+    padding: 0.4em 1em;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    background: #f7f8fa;
+    font-size: 1em;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .select:focus {
+    border-color: #4f8cff;
+  }
   .question-block {
-    margin-bottom: 1.5em;
+    margin-bottom: 2em;
+    padding: 1em 1.2em;
+    background: #f7f8fa;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px 0 rgba(60, 80, 120, 0.04);
+    transition: box-shadow 0.2s;
   }
-  label {
+  .question-block:hover {
+    box-shadow: 0 2px 8px 0 rgba(60, 80, 120, 0.08);
+  }
+  .question-text {
+    font-size: 1.08em;
+    margin-bottom: 0.7em;
     font-weight: 500;
-    margin-right: 1em;
+    color: #222;
   }
-  input[type="radio"] {
-    margin: 0 0.5em 0 1em;
+  .toggle-group {
+    display: flex;
+    gap: 1.5em;
   }
-  button[type="submit"] {
-    margin-top: 2em;
-    padding: 0.5em 2em;
-    font-size: 1.1em;
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.4em 1.2em;
+    border-radius: 8px;
+    background: #e9eefc;
+    color: #357ae8;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    user-select: none;
+  }
+  .toggle input[type="radio"] {
+    display: none;
+  }
+  .toggle.active {
     background: #4f8cff;
     color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    border-color: #357ae8;
+    box-shadow: 0 2px 8px 0 rgba(60, 80, 120, 0.10);
   }
-  button[type="submit"]:hover {
-    background: #357ae8;
+  .btn {
+    margin-top: 2em;
+    padding: 0.7em 2.5em;
+    font-size: 1.1em;
+    background: linear-gradient(90deg, #4f8cff 60%, #357ae8 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 2px 8px 0 rgba(60, 80, 120, 0.10);
+    transition: background 0.2s;
+  }
+  .btn:hover {
+    background: linear-gradient(90deg, #357ae8 60%, #4f8cff 100%);
   }
   .error-message {
     color: #d8000c;
     background: #ffd2d2;
     border: 1px solid #d8000c;
-    padding: 0.5em 1em;
+    padding: 0.7em 1.2em;
     margin-top: 1em;
-    border-radius: 4px;
+    border-radius: 8px;
     font-weight: 500;
     display: inline-block;
-  }
-  .age-selector {
-    margin-bottom: 2em;
+    box-shadow: 0 1px 4px 0 rgba(216, 0, 12, 0.08);
   }
   .grading-result {
     margin-top: 2em;
-    padding: 1em;
+    padding: 1.5em 2em;
     background: #f6f8fa;
-    border-radius: 6px;
+    border-radius: 18px;
     border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 16px 0 rgba(60, 80, 120, 0.10);
+    font-size: 1.08em;
+    color: #222;
   }
   .grading-result ul {
     margin-bottom: 1em;
+    padding-left: 1em;
   }
   .grading-result li {
+    margin-bottom: 0.5em;
+    font-size: 1.05em;
+  }
+  .result-title {
+    font-size: 1.3em;
+    font-weight: 600;
+    margin-bottom: 1em;
+    color: #357ae8;
+    text-align: center;
+  }
+  .result-positive {
+    color: #357ae8;
+    font-weight: 600;
+    margin-bottom: 0.5em;
+  }
+  .result-negative {
+    color: #d8000c;
+    font-weight: 600;
     margin-bottom: 0.5em;
   }
   .note {
     font-size: 0.95em;
     color: #555;
     margin-top: 1em;
+    text-align: center;
+  }
+  .mono {
+    font-family: 'Fira Mono', 'Menlo', 'Monaco', monospace;
+    font-size: 1em;
+    background: #e9eefc;
+    border-radius: 4px;
+    padding: 0.1em 0.5em;
+  }
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity 0.3s;
+  }
+  .fade-enter-from, .fade-leave-to {
+    opacity: 0;
   }
 </style>

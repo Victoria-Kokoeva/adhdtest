@@ -190,9 +190,9 @@ function copyShareUrl() {
 </script>
 
 <style scoped>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap');
   body, .container {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Quicksand', system-ui, sans-serif;
     background: #f7f8fa;
     color: #222;
   }

@@ -2,6 +2,14 @@
   <main>
     <div class="container card">
       <h1 class="title">ADHD Questionnaire</h1>
+      <div style="margin-bottom:2em;text-align:center">
+        <label style="font-weight:500">Share your answers (partial or complete):</label>
+        <div style="display:flex;align-items:center;gap:0.5em;width:100%;justify-content:center">
+          <input type="text" :value="shareUrl" readonly style="flex:1;width:100%;margin-top:0.5em;padding:0.5em;border-radius:6px;border:1px solid #e0e0e0;font-size:0.95em" />
+          <button type="button" class="btn" style="margin-top:0.5em;padding:0.5em 1em;font-size:1em;min-width:80px;" @click="copyShareUrl">Copy</button>
+        </div>
+        <div style="font-size:0.9em;color:#555;margin-top:0.5em">Copy and share this link. Anyone visiting it will see your answers pre-filled.</div>
+      </div>
       <form @submit.prevent="submitAnswers">
         <div class="age-selector">
           <label for="age-group">Are you <span class="mono">&gt;16</span> years old?</label>
@@ -69,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 
 const questionsGroup1 = [
   { id: 1, question: "Do you often fail to give close attention to details or make careless mistakes in schoolwork, at work, or during other activities?" },
@@ -98,27 +106,54 @@ const questionsGroup2 = [
 const answersGroup1 = ref<string[]>(Array(questionsGroup1.length).fill(''));
 const answersGroup2 = ref<string[]>(Array(questionsGroup2.length).fill(''));
 
-// Load answers from localStorage if available
+
 onMounted(() => {
-  const saved = localStorage.getItem('adhdtest-answers');
-  if (saved) {
+  // Check for answers in URL
+  const params = new URLSearchParams(window.location.search);
+  const a1 = params.get('a1');
+  const a2 = params.get('a2');
+  const adult = params.get('adult');
+  if (a1 && a2 && adult !== null) {
     try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed.answersGroup1) && Array.isArray(parsed.answersGroup2)) {
-        answersGroup1.value = parsed.answersGroup1.length === questionsGroup1.length ? parsed.answersGroup1 : Array(questionsGroup1.length).fill('');
-        answersGroup2.value = parsed.answersGroup2.length === questionsGroup2.length ? parsed.answersGroup2 : Array(questionsGroup2.length).fill('');
+      const arr1 = JSON.parse(decodeURIComponent(a1));
+      const arr2 = JSON.parse(decodeURIComponent(a2));
+      const isAdultVal = JSON.parse(decodeURIComponent(adult));
+      if (Array.isArray(arr1) && Array.isArray(arr2) && typeof isAdultVal === 'boolean') {
+        answersGroup1.value = arr1.length === questionsGroup1.length ? arr1 : Array(questionsGroup1.length).fill('');
+        answersGroup2.value = arr2.length === questionsGroup2.length ? arr2 : Array(questionsGroup2.length).fill('');
+        isAdult.value = isAdultVal;
+        // Save to localStorage
+        localStorage.setItem('adhdtest-answers', JSON.stringify({ answersGroup1: arr1, answersGroup2: arr2, isAdult: isAdultVal }));
       }
     } catch {}
+  } else {
+    // Load answers from localStorage if available
+    const saved = localStorage.getItem('adhdtest-answers');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.answersGroup1) && Array.isArray(parsed.answersGroup2) && typeof parsed.isAdult === 'boolean') {
+          answersGroup1.value = parsed.answersGroup1.length === questionsGroup1.length ? parsed.answersGroup1 : Array(questionsGroup1.length).fill('');
+          answersGroup2.value = parsed.answersGroup2.length === questionsGroup2.length ? parsed.answersGroup2 : Array(questionsGroup2.length).fill('');
+          isAdult.value = parsed.isAdult;
+        }
+      } catch {}
+    }
   }
 });
 
-// Watch for changes and save to localStorage
-watch([answersGroup1, answersGroup2], ([a1, a2]) => {
-  localStorage.setItem('adhdtest-answers', JSON.stringify({ answersGroup1: a1, answersGroup2: a2 }));
-}, { deep: true });
 const error = ref(false);
 const isAdult = ref(true); // true = >16 years old
 const showResult = ref(false);
+
+const shareUrl = computed(() => {
+  return `${window.location.origin}${window.location.pathname}?a1=${JSON.stringify(answersGroup1.value)}&a2=${JSON.stringify(answersGroup2.value)}&adult=${JSON.stringify(isAdult.value)}`;
+});
+
+// Watch for changes and save to localStorage
+watch([answersGroup1, answersGroup2, isAdult], ([a1, a2, adult]) => {
+  localStorage.setItem('adhdtest-answers', JSON.stringify({ answersGroup1: a1, answersGroup2: a2, isAdult: adult }));
+}, { deep: true });
 
 const inattentionYes = ref(0);
 const hyperYes = ref(0);
@@ -141,6 +176,10 @@ function submitAnswers() {
   showResult.value = true;
   // Save answers to localStorage (redundant, but ensures latest)
   localStorage.setItem('adhdtest-answers', JSON.stringify({ answersGroup1: answersGroup1.value, answersGroup2: answersGroup2.value }));
+}
+
+function copyShareUrl() {
+  navigator.clipboard.writeText(shareUrl.value);
 }
 </script>
 

@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 
 const questionsGroup1 = [
   { id: 1, question: "Do you often fail to give close attention to details or make careless mistakes in schoolwork, at work, or during other activities?" },
@@ -97,6 +97,25 @@ const questionsGroup2 = [
 
 const answersGroup1 = ref<string[]>(Array(questionsGroup1.length).fill(''));
 const answersGroup2 = ref<string[]>(Array(questionsGroup2.length).fill(''));
+
+// Load answers from localStorage if available
+onMounted(() => {
+  const saved = localStorage.getItem('adhdtest-answers');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed.answersGroup1) && Array.isArray(parsed.answersGroup2)) {
+        answersGroup1.value = parsed.answersGroup1.length === questionsGroup1.length ? parsed.answersGroup1 : Array(questionsGroup1.length).fill('');
+        answersGroup2.value = parsed.answersGroup2.length === questionsGroup2.length ? parsed.answersGroup2 : Array(questionsGroup2.length).fill('');
+      }
+    } catch {}
+  }
+});
+
+// Watch for changes and save to localStorage
+watch([answersGroup1, answersGroup2], ([a1, a2]) => {
+  localStorage.setItem('adhdtest-answers', JSON.stringify({ answersGroup1: a1, answersGroup2: a2 }));
+}, { deep: true });
 const error = ref(false);
 const isAdult = ref(true); // true = >16 years old
 const showResult = ref(false);
@@ -120,6 +139,8 @@ function submitAnswers() {
   hyperYes.value = answersGroup2.value.filter(ans => ans === 'yes').length;
   totalYes.value = inattentionYes.value + hyperYes.value;
   showResult.value = true;
+  // Save answers to localStorage (redundant, but ensures latest)
+  localStorage.setItem('adhdtest-answers', JSON.stringify({ answersGroup1: answersGroup1.value, answersGroup2: answersGroup2.value }));
 }
 </script>
 

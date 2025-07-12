@@ -3,6 +3,13 @@
     <div class="container">
       <h1>ADHD Questionnaire</h1>
       <form @submit.prevent="submitAnswers">
+        <div class="age-selector">
+          <label for="age-group">Are you &gt;16 years old?</label>
+          <select id="age-group" v-model="isAdult">
+            <option :value="true">Yes</option>
+            <option :value="false">No</option>
+          </select>
+        </div>
         <h2>Inattention Questions</h2>
         <div v-for="(q, idx) in questionsGroup1" :key="q.id" class="question-block">
           <label :for="'inattention-' + q.id">{{ q.question }}</label>
@@ -26,6 +33,27 @@
         <button type="submit">Submit</button>
         <div v-if="error" class="error-message">Please answer all questions before submitting.</div>
       </form>
+      <div v-if="showResult" class="grading-result">
+        <h3>Screening Result</h3>
+        <ul>
+          <li><strong>Inattention:</strong> {{ inattentionYes }} Yes</li>
+          <li><strong>Hyperactivity/Impulsivity:</strong> {{ hyperYes }} Yes</li>
+          <li><strong>Total Yes:</strong> {{ totalYes }}</li>
+        </ul>
+        <div v-if="isAdult">
+          <div v-if="inattentionYes >= 4">Positive Inattention Screening (Adult)</div>
+          <div v-if="hyperYes >= 4">Positive Hyperactive/Impulsive Screening (Adult)</div>
+          <div v-if="totalYes >= 7">Overall ADHD Likelihood (Adult): Top 5–7% symptom frequency</div>
+          <div v-if="inattentionYes < 4 && hyperYes < 4 && totalYes < 7">Screening below threshold for ADHD likelihood (Adult)</div>
+        </div>
+        <div v-else>
+          <div v-if="inattentionYes >= 6">Positive Inattention Screening (Child)</div>
+          <div v-if="hyperYes >= 6">Positive Hyperactive/Impulsive Screening (Child)</div>
+          <div v-if="inattentionYes >= 6 || hyperYes >= 6">Overall ADHD Likelihood (Child): Meets category threshold</div>
+          <div v-if="inattentionYes < 6 && hyperYes < 6">Screening below threshold for ADHD likelihood (Child)</div>
+        </div>
+        <p class="note">Meeting or exceeding the symptom count threshold does not constitute a diagnosis. A positive screen increases the likelihood of ADHD and indicates the need for professional evaluation.</p>
+      </div>
     </div>
   </main>
 </template>
@@ -60,9 +88,16 @@ const questionsGroup2 = [
 const answersGroup1 = ref<string[]>(Array(questionsGroup1.length).fill(''));
 const answersGroup2 = ref<string[]>(Array(questionsGroup2.length).fill(''));
 const error = ref(false);
+const isAdult = ref(true); // true = >16 years old
+const showResult = ref(false);
+
+const inattentionYes = ref(0);
+const hyperYes = ref(0);
+const totalYes = ref(0);
 
 function submitAnswers() {
   error.value = false;
+  showResult.value = false;
   // Check if all questions are answered
   const allAnswered1 = answersGroup1.value.every(ans => ans === 'yes' || ans === 'no');
   const allAnswered2 = answersGroup2.value.every(ans => ans === 'yes' || ans === 'no');
@@ -70,7 +105,11 @@ function submitAnswers() {
     error.value = true;
     return;
   }
-  // No further action on submit
+  // Grading logic
+  inattentionYes.value = answersGroup1.value.filter(ans => ans === 'yes').length;
+  hyperYes.value = answersGroup2.value.filter(ans => ans === 'yes').length;
+  totalYes.value = inattentionYes.value + hyperYes.value;
+  showResult.value = true;
 }
 </script>
 
@@ -107,5 +146,26 @@ function submitAnswers() {
     border-radius: 4px;
     font-weight: 500;
     display: inline-block;
+  }
+  .age-selector {
+    margin-bottom: 2em;
+  }
+  .grading-result {
+    margin-top: 2em;
+    padding: 1em;
+    background: #f6f8fa;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+  }
+  .grading-result ul {
+    margin-bottom: 1em;
+  }
+  .grading-result li {
+    margin-bottom: 0.5em;
+  }
+  .note {
+    font-size: 0.95em;
+    color: #555;
+    margin-top: 1em;
   }
 </style>
